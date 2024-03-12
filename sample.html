@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Search</title>
+</head>
+<body>
+    <div>
+        <form id="search-form">
+            <input type="text" id="location-input" placeholder="Enter location">
+            <button type="submit">Search</button>
+        </form>
+        <div id="recommendations"></div>
+    </div>
+    <div id="map" style="height: 400px; width: 100%;"></div>
+    <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9kzmCY9-5cEA3vcUYZPWLSwGlgT5aHmI&libraries=places&callback=initMap&language=en"></script>
+    <script>
+        var map;
+        var service;
+        var infowindow;
+        var autocomplete;
+
+        function initMap() {
+            var europeCenter = new google.maps.LatLng(51.1657, 10.4515); // Centered on Europe
+
+            infowindow = new google.maps.InfoWindow();
+
+            map = new google.maps.Map(
+                document.getElementById('map'), {center: europeCenter, zoom: 5}); // Zoom level adjusted for Europe
+
+            autocomplete = new google.maps.places.Autocomplete(document.getElementById('location-input'));
+
+            document.getElementById('search-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                var location = document.getElementById('location-input').value;
+                searchRestaurants(location);
+            });
+
+            autocomplete.addListener('place_changed', function() {
+                var place = autocomplete.getPlace();
+                if (!place.geometry) {
+                    return;
+                }
+                searchRestaurants(place.formatted_address);
+            });
+        }
+
+        function searchRestaurants(location) {
+            var request = {
+                query: 'restaurant ' + location,
+                fields: ['name', 'geometry'],
+            };
+
+            service = new google.maps.places.PlacesService(map);
+
+            service.findPlaceFromQuery(request, function(results, status) {
+                if (status === google.maps.places.PlacesServiceStatus.OK) {
+                    for (var i = 0; i < results.length; i++) {
+                        createMarker(results[i]);
+                    }
+                    map.setCenter(results[0].geometry.location);
+                } else {
+                    alert('No restaurants found');
+                }
+            });
+        }
+
+        function createMarker(place) {
+            var marker = new google.maps.Marker({
+                map: map,
+                position: place.geometry.location
+            });
+
+            google.maps.event.addListener(marker, 'click', function() {
+                infowindow.setContent(place.name);
+                infowindow.open(map, this);
+            });
+        }
+    </script>
+</body>
+</html>
